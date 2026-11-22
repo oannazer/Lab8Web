@@ -6,54 +6,89 @@
 **Mata Kuliah:** Pemrograman Web  
 **Dosen:** Agung Nugroho S.Kom, M.Kom
 
-## Langkah Praktikum - Aplikasi CRUD Data Barang
+## Tujuan Praktikum
 
-Praktikum ini menggunakan PHP dan MySQL untuk mengelola data barang. Aplikasi menerapkan empat operasi CRUD: menampilkan (Read), menambah (Create), mengubah (Update), dan menghapus (Delete) data. Data disimpan pada database `latihan1`, sedangkan gambar barang disimpan di folder `gambar/`.
+Praktikum ini membahas pembuatan aplikasi CRUD data barang menggunakan PHP dan MySQL. Database menyimpan kategori, nama, gambar, harga beli, harga jual, dan stok. Halaman `index.php` menampilkan data; `tambah.php`, `ubah.php`, dan `hapus.php` menjalankan operasi Create, Update, dan Delete.
 
-## Persiapan dan Struktur File
+## Langkah Kerja
 
-Pastikan Apache dan MySQL berjalan pada XAMPP. Salin folder `Lab8Web` ke `C:\xampp\htdocs\lab8_php_database`.
+### 1. Menjalankan MySQL Server
 
-```text
-Lab8Web/
-├── database.sql       # Membuat database, tabel, dan data awal
-├── koneksi.php        # Koneksi database dan fungsi pendukung
-├── index.php          # Menampilkan daftar barang (Read)
-├── tambah.php         # Menambahkan barang (Create)
-├── ubah.php           # Mengubah barang (Update)
-├── hapus.php          # Menghapus barang (Delete)
-├── style.css          # Tampilan responsif
-├── gambar/            # Gambar barang yang diunggah
-└── screenshots/       # Bukti tampilan praktikum
-```
+Buka XAMPP Control Panel, lalu jalankan Apache dan MySQL. Apache melayani file PHP, sedangkan MySQL menyimpan data aplikasi.
 
-## Menyiapkan Database MySQL
+![XAMPP Control Panel dengan Apache dan MySQL aktif](screenshots/01-xampp.png)
 
-Buka `http://localhost/phpmyadmin/`, pilih tab **SQL**, lalu jalankan isi file `database.sql`. Script membuat database `latihan1`, tabel `data_barang`, dan tiga contoh data elektronik.
+### 2. Membuka phpMyAdmin
+
+Setelah Apache dan MySQL aktif, buka `http://localhost/phpmyadmin/`. Pilih tab **SQL** untuk membuat database, tabel, dan data awal.
+
+### 3. Membuat Database `latihan1`
+
+Jalankan perintah berikut di tab SQL phpMyAdmin.
 
 ```sql
 CREATE DATABASE IF NOT EXISTS latihan1;
 USE latihan1;
+```
 
+- `CREATE DATABASE` membuat database bernama `latihan1`.
+- `IF NOT EXISTS` mencegah pesan gagal jika database tersebut sudah tersedia.
+- `USE latihan1` memilih database untuk pembuatan tabel dan penyimpanan data.
+
+### 4. Membuat Tabel `data_barang`
+
+```sql
 CREATE TABLE IF NOT EXISTS data_barang (
-  id_barang INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  kategori VARCHAR(30) NOT NULL,
-  nama VARCHAR(100) NOT NULL,
-  gambar VARCHAR(255) DEFAULT NULL,
-  harga_beli DECIMAL(12, 0) NOT NULL DEFAULT 0,
-  harga_jual DECIMAL(12, 0) NOT NULL DEFAULT 0,
-  stok INT UNSIGNED NOT NULL DEFAULT 0
+    id_barang INT(10) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    kategori VARCHAR(30),
+    nama VARCHAR(30),
+    gambar VARCHAR(100),
+    harga_beli DECIMAL(10, 0),
+    harga_jual DECIMAL(10, 0),
+    stok INT(4)
 );
 ```
 
-- `id_barang` menjadi primary key dan bertambah otomatis untuk setiap baris baru.
-- `DECIMAL(12, 0)` menyimpan harga sebagai bilangan bulat dengan kapasitas hingga 12 digit.
-- `gambar` menyimpan nama file gambar yang diunggah, bukan data gambar itu sendiri.
-- `IF NOT EXISTS` mencegah pembuatan ulang database atau tabel yang sudah ada.
+- `id_barang` adalah primary key dan bertambah otomatis saat baris baru ditambahkan.
+- `kategori`, `nama`, dan `gambar` menyimpan teks dengan batas panjang sesuai definisi kolom.
+- `harga_beli` dan `harga_jual` menggunakan `DECIMAL(10, 0)` untuk nilai Rupiah tanpa angka pecahan.
+- `stok` menyimpan jumlah barang.
 
-**Screenshot:** simpan bukti database dan tabel sebagai `screenshots/01-database.png`.
+### 5. Menambahkan Data Contoh
 
-## Membuat Koneksi Database
+```sql
+INSERT INTO data_barang (kategori, nama, gambar, harga_beli, harga_jual, stok)
+VALUES
+('Elektronik', 'HP Samsung Android', NULL, 2000000, 2400000, 5),
+('Elektronik', 'HP Xiaomi Android', NULL, 1000000, 1400000, 5),
+('Elektronik', 'HP OPPO Android', NULL, 1800000, 2300000, 5);
+```
+
+File `database.sql` berisi versi yang aman dijalankan berulang kali: setiap barang contoh hanya ditambahkan jika namanya belum tercatat.
+
+![Database latihan1 dan tabel data_barang di phpMyAdmin](screenshots/02-database.png)
+
+### 6. Menyiapkan Folder Proyek
+
+Buat folder `lab8_php_database` di dalam `C:\xampp\htdocs`. Susunan file proyek:
+
+```text
+lab8_php_database/
+├── koneksi.php   # Koneksi MySQL dan fungsi bantuan
+├── index.php     # Daftar data barang dan tombol aksi
+├── tambah.php    # Form dan proses Create
+├── ubah.php      # Form dan proses Update
+├── hapus.php     # Menghapus data berdasarkan ID
+├── style.css     # Tampilan semua halaman
+├── gambar/       # File gambar barang yang diunggah
+└── screenshots/  # Bukti langkah praktikum
+```
+
+Salin file proyek ke folder tersebut, lalu akses `http://localhost/lab8_php_database/` melalui browser.
+
+### 7. Membuat Koneksi Database
+
+Di awal file PHP, `koneksi.php` membuka koneksi ke MySQL dan memilih database `latihan1`.
 
 ```php
 $host = 'localhost';
@@ -61,127 +96,76 @@ $user = 'root';
 $pass = '';
 $db = 'latihan1';
 
-$conn = new mysqli($host, $user, $pass, $db);
-$conn->set_charset('utf8mb4');
+$conn = mysqli_connect($host, $user, $pass, $db);
+if (!$conn) {
+    exit('Koneksi database gagal.');
+}
+mysqli_set_charset($conn, 'utf8mb4');
 ```
 
-- `$host`, `$user`, `$pass`, dan `$db` berisi pengaturan MySQL lokal XAMPP. Jika konfigurasi MySQL berbeda, ubah bagian ini.
-- `new mysqli(...)` membuka koneksi dari PHP ke database.
-- `set_charset('utf8mb4')` menetapkan encoding agar karakter teks tersimpan dan terbaca dengan benar.
-- `mysqli_report(...)` dan blok `try/catch` di `koneksi.php` menangani kegagalan koneksi tanpa menampilkan detail internal server.
+- `$host`, `$user`, `$pass`, dan `$db` adalah pengaturan koneksi lokal XAMPP.
+- `mysqli_connect()` menyambungkan PHP ke MySQL.
+- `mysqli_set_charset()` mengatur encoding koneksi ke UTF-8.
+- Fungsi `e()` di file yang sama menggunakan `htmlspecialchars()` sebelum teks ditampilkan dalam HTML.
 
-## Menampilkan Data Barang (Read)
+### 8. Menampilkan Data Barang (Read)
+
+`index.php` menjalankan `SELECT * FROM data_barang`, kemudian membuat satu baris tabel untuk setiap hasil query.
 
 ```php
-$result = $conn->query(
-    'SELECT id_barang, kategori, nama, gambar, harga_beli, harga_jual, stok
-     FROM data_barang ORDER BY id_barang DESC'
-);
+include("koneksi.php");
+$sql = 'SELECT * FROM data_barang';
+$result = mysqli_query($conn, $sql);
 ```
+
+Perulangan `mysqli_fetch_array($result)` membaca data satu per satu untuk mengisi sel tabel. Kolom Aksi yang sudah ada menampilkan ID barang. Di sampingnya, tombol **Ubah** mengarah ke `ubah.php?id=...`, sedangkan **Hapus** mengarah ke `hapus.php?id=...`. Tombol **Tambah Barang** di atas tabel membuka `tambah.php` tanpa ID karena data baru belum memiliki ID.
+
+![Halaman daftar barang dengan tombol Tambah, Ubah, dan Hapus](screenshots/03-read-actions.png)
+
+### 9. Menambah Data (Create)
+
+Form di `tambah.php` mengirim nama, kategori, harga, stok, dan berkas gambar menggunakan POST. Setelah tombol **Simpan** ditekan, kode mengambil nilai form, menyusun perintah `INSERT INTO data_barang`, menjalankannya dengan `mysqli_query()`, lalu mengarahkan browser kembali ke `index.php`.
 
 ```php
-<?php while ($row = $result->fetch_assoc()): ?>
-    <tr>
-        <td><?= e($row['nama']) ?></td>
-        <td><?= e($row['kategori']) ?></td>
-        <td><?= e(format_rupiah($row['harga_jual'])) ?></td>
-        <td><?= (int) $row['stok'] ?></td>
-    </tr>
-<?php endwhile; ?>
+$sql = 'INSERT INTO data_barang (nama, kategori, harga_jual, harga_beli, stok, gambar) ';
+$sql .= "VALUE ('{$nama}', '{$kategori}', '{$harga_jual}', '{$harga_beli}', '{$stok}', '{$gambar}')";
+$result = mysqli_query($conn, $sql);
+header('location: index.php');
 ```
 
-- Query `SELECT` mengambil seluruh kolom yang dibutuhkan tabel daftar.
-- `ORDER BY id_barang DESC` menampilkan barang terbaru lebih dulu.
-- `fetch_assoc()` membaca tiap baris sebagai array asosiatif; perulangan membuat satu baris tabel untuk tiap barang.
-- `e()` meng-escape teks dengan `htmlspecialchars()` sebelum ditampilkan.
-- `format_rupiah()` menambahkan format Rupiah pada nilai harga.
-- Jika belum ada baris, aplikasi menampilkan pesan bahwa data masih kosong.
+Form gambar menggunakan `enctype="multipart/form-data"`. Jika berkas dipilih, PHP memindahkannya ke folder `gambar/` dan menyimpan alamat relatifnya ke kolom `gambar`.
 
-**Screenshot:** simpan bukti daftar barang sebagai `screenshots/02-read-data.png`.
+![Form Tambah Barang](screenshots/04-create-form.png)
 
-## Menambah Data (Create)
+![Hasil setelah barang ditambahkan](screenshots/05-create-result.png)
+
+### 10. Mengubah Data (Update)
+
+Tombol **Ubah** mengirim ID melalui parameter URL. `ubah.php` mengambil data dengan ID tersebut, mengisi form, kemudian menjalankan query `UPDATE` saat form dikirim. ID juga dikirim saat form disimpan melalui input tersembunyi.
 
 ```php
-$stmt = $conn->prepare(
-    'INSERT INTO data_barang (nama, kategori, harga_beli, harga_jual, stok, gambar)
-     VALUES (?, ?, ?, ?, ?, ?)'
-);
-$stmt->bind_param('ssssss', $nama, $kategori, $hargaBeli, $hargaJual, $stok, $gambar);
-$stmt->execute();
+$id = $_GET['id'] ?? null;
+$sql = "SELECT * FROM data_barang WHERE id_barang = '{$id}'";
+$result = mysqli_query($conn, $sql);
 ```
 
-- `prepare()` membuat query dengan placeholder `?` untuk nilai masukan.
-- `bind_param()` mengikat nilai ke placeholder; cara ini menghindari penyusunan SQL langsung dari teks pengguna.
-- `execute()` menjalankan perintah dan menyimpan baris baru.
-- `tambah.php` juga memvalidasi nama, kategori, harga, stok, dan file gambar sebelum menyimpan.
-- Form menggunakan `enctype="multipart/form-data"` agar berkas dapat dikirim.
-- Gambar opsional dibatasi pada JPG, PNG, atau WebP dengan ukuran maksimal 2 MB.
+Jika gambar baru dipilih, file dipindahkan ke folder `gambar/` dan kolom gambar diperbarui. Jika tidak, query mempertahankan gambar sebelumnya.
 
-**Screenshot:** simpan form tambah barang sebagai `screenshots/03-create-form.png`.
+![Form Ubah Barang dengan data lama](screenshots/06-update-form.png)
 
-**Screenshot:** simpan hasil barang yang ditambahkan sebagai `screenshots/04-create-result.png`.
+![Hasil setelah barang diperbarui](screenshots/07-update-result.png)
 
-## Mengubah Data (Update)
+### 11. Menghapus Data (Delete)
+
+Tombol **Hapus** membuka `hapus.php?id=...`. File tersebut membaca ID dari URL, menjalankan perintah `DELETE` untuk baris dengan ID itu, lalu mengarahkan browser kembali ke `index.php`.
 
 ```php
-$stmt = $conn->prepare(
-    'UPDATE data_barang
-     SET nama = ?, kategori = ?, harga_beli = ?, harga_jual = ?, stok = ?, gambar = ?
-     WHERE id_barang = ?'
-);
-$stmt->bind_param('ssssssi', $nama, $kategori, $hargaBeli, $hargaJual, $stok, $gambar, $id);
-$stmt->execute();
+$id = $_GET['id'];
+$sql = "DELETE FROM data_barang WHERE id_barang = '{$id}'";
+$result = mysqli_query($conn, $sql);
+header('location: index.php');
 ```
 
-- ID diambil dari parameter URL lalu divalidasi sebagai integer.
-- Query awal `SELECT ... WHERE id_barang = ?` mengambil data lama untuk mengisi nilai form.
-- Query `UPDATE` memakai prepared statement dan membatasi perubahan dengan `WHERE id_barang = ?`.
-- Jika gambar baru tidak dipilih, nama file lama dipertahankan.
-- Setelah perubahan tersimpan, pengguna diarahkan kembali ke daftar dengan pesan hasil.
+Pada implementasi saat ini, penghapusan berjalan langsung ketika tautan Hapus dibuka; belum ada halaman konfirmasi.
 
-**Screenshot:** simpan form edit barang sebagai `screenshots/05-update-form.png`.
-
-**Screenshot:** simpan hasil perubahan data sebagai `screenshots/06-update-result.png`.
-
-## Menghapus Data (Delete)
-
-```php
-$stmt = $conn->prepare('DELETE FROM data_barang WHERE id_barang = ?');
-$stmt->bind_param('i', $id);
-$stmt->execute();
-```
-
-- ID barang harus bilangan bulat positif.
-- Penghapusan hanya diterima melalui metode POST dan meminta konfirmasi di browser.
-- Token CSRF diperiksa sebelum data dihapus.
-- Setelah baris dihapus, gambar yang terkait juga dibersihkan dari folder `gambar/`.
-- Jika data tidak ditemukan, aplikasi menampilkan pesan dan kembali ke daftar.
-
-**Screenshot:** simpan konfirmasi sebelum penghapusan sebagai `screenshots/07-delete-confirm.png`.
-
-**Screenshot:** simpan daftar setelah penghapusan sebagai `screenshots/08-delete-result.png`.
-
-## Pengamanan dan Validasi
-
-- Nilai teks di-escape menggunakan `htmlspecialchars()` melalui fungsi `e()`.
-- Query tambah, ubah, dan hapus menggunakan prepared statements.
-- Form perubahan data memakai token CSRF untuk memastikan permintaan berasal dari sesi aplikasi.
-- File gambar divalidasi berdasarkan MIME type, ekstensi yang diizinkan, dan batas ukuran.
-- Nama berkas yang disimpan dibuat acak untuk menghindari benturan nama serta penggunaan nama file yang tidak aman.
-- Validasi HTML memberi panduan awal, sedangkan PHP tetap memeriksa input di server.
-
-## Menjalankan Aplikasi
-
-1. Jalankan **Apache** dan **MySQL** dari XAMPP Control Panel.
-2. Impor `database.sql` melalui phpMyAdmin.
-3. Letakkan isi folder proyek pada `C:\xampp\htdocs\lab8_php_database`.
-4. Buka `http://localhost/lab8_php_database/`.
-5. Tambahkan, ubah, dan hapus data untuk mencoba alur CRUD.
-
-## Ringkasan Hasil
-
-Aplikasi menyimpan data barang dalam MySQL dan menyediakan daftar, form tambah, form ubah, serta aksi hapus. Penggunaan query terparameterisasi, validasi input, dan escaping output membantu menjaga pemrosesan data tetap aman.
-
-## Bukti Screenshot
-
-Folder `screenshots/` disiapkan untuk bukti database dan setiap operasi CRUD. Screenshot belum tersedia; ambil dari browser setelah Apache dan MySQL dijalankan pada XAMPP, lalu gunakan nama file sesuai bagian di atas.
+![Daftar barang setelah penghapusan](screenshots/08-delete-result.png)

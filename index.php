@@ -1,76 +1,57 @@
 <?php
-require __DIR__ . '/koneksi.php';
-
-$result = $conn->query('SELECT id_barang, kategori, nama, gambar, harga_beli, harga_jual, stok FROM data_barang ORDER BY id_barang DESC');
-$flash = $_SESSION['flash'] ?? null;
-unset($_SESSION['flash']);
+include("koneksi.php");
+// query untuk menampilkan data
+$sql = 'SELECT * FROM data_barang';
+$result = mysqli_query($conn, $sql);
 ?>
-<!doctype html>
-<html lang="id">
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Data Barang | Lab 8</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <link href="style.css" rel="stylesheet" type="text/css" />
+    <title>Data Barang</title>
 </head>
+
 <body>
-<main class="container">
-    <header class="page-header">
-        <div>
-            <p class="eyebrow">Praktikum 8 · PHP &amp; MySQL</p>
-            <h1>Data Barang</h1>
-            <p class="muted">Kelola persediaan barang melalui operasi CRUD.</p>
-        </div>
-        <a class="button primary" href="tambah.php">+ Tambah Barang</a>
-    </header>
-
-    <?php if ($flash): ?>
-        <div class="alert <?= e($flash['type'] ?? 'success') ?>" role="status"><?= e($flash['message'] ?? '') ?></div>
-    <?php endif; ?>
-
-    <section class="table-card" aria-label="Daftar barang">
-        <div class="table-scroll">
+    <div class="container">
+        <h1>Data Barang</h1>
+        <p class="add-action"><a class="button button-primary" href="tambah.php">+ Tambah Barang</a></p>
+        <div class="main">
             <table>
-                <thead>
                 <tr>
-                    <th>Gambar</th><th>Nama Barang</th><th>Kategori</th>
-                    <th>Harga Beli</th><th>Harga Jual</th><th>Stok</th><th>Aksi</th>
+                    <th>Gambar</th>
+                    <th>Nama Barang</th>
+                    <th>Katagori</th>
+                    <th>Harga Jual</th>
+                    <th>Harga Beli</th>
+                    <th>Stok</th>
+                    <th>Tindakan</th>
                 </tr>
-                </thead>
-                <tbody>
-                <?php if ($result->num_rows === 0): ?>
-                    <tr><td class="empty" colspan="7">Belum ada data barang.</td></tr>
-                <?php else: ?>
-                    <?php while ($row = $result->fetch_assoc()): ?>
+                <?php if ($result): ?>
+                    <?php while ($row = mysqli_fetch_array($result)): ?>
                         <tr>
-                            <td>
-                                <?php if ($row['gambar']): ?>
-                                    <img class="product-image" src="gambar/<?= e($row['gambar']) ?>" alt="<?= e($row['nama']) ?>">
-                                <?php else: ?>
-                                    <span class="image-placeholder" aria-label="Tidak ada gambar">—</span>
-                                <?php endif; ?>
-                            </td>
-                            <td class="product-name"><?= e($row['nama']) ?></td>
-                            <td><span class="badge"><?= e($row['kategori']) ?></span></td>
-                            <td><?= e(format_rupiah($row['harga_beli'])) ?></td>
-                            <td><?= e(format_rupiah($row['harga_jual'])) ?></td>
-                            <td><?= e((string) $row['stok']) ?></td>
-                            <td class="actions">
-                                <a class="button small" href="ubah.php?id=<?= (int) $row['id_barang'] ?>">Ubah</a>
-                                <form method="post" action="hapus.php" onsubmit="return confirm('Hapus barang ini?')">
-                                    <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
-                                    <input type="hidden" name="id" value="<?= (int) $row['id_barang'] ?>">
-                                    <button class="button small danger" type="submit">Hapus</button>
-                                </form>
+                            <td><img src="gambar/<?= $row['gambar']; ?>" alt="<?=
+                                  $row['nama']; ?>"></td>
+                            <td><?= $row['nama']; ?></td>
+                            <td><?= $row['kategori']; ?></td>
+                            <td><?= $row['harga_beli']; ?></td>
+                            <td><?= $row['harga_jual']; ?></td>
+                            <td><?= $row['stok']; ?></td>
+                            <td class="row-actions">
+                                <a class="button button-small" href="ubah.php?id=<?= $row['id_barang']; ?>">Ubah</a>
+                                <a class="button button-small button-danger" href="hapus.php?id=<?= $row['id_barang']; ?>"
+                                    onclick="return confirm('Yakin ingin menghapus barang ini?');">Hapus</a>
                             </td>
                         </tr>
-                    <?php endwhile; ?>
+                    <?php endwhile; else: ?>
+                    <tr>
+                        <td colspan="8">Belum ada data</td>
+                    </tr>
                 <?php endif; ?>
-                </tbody>
             </table>
         </div>
-        <footer class="table-footer">Jumlah barang: <strong><?= (int) $result->num_rows ?></strong></footer>
-    </section>
-</main>
+    </div>
 </body>
+
 </html>
